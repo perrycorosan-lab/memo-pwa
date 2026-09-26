@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFECB3" />
+  <meta name="description" content="シンプルなメモアプリ。オフラインでも使えます。" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="メモ" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>メモ</title>
+</head>
+<body>
+  <!-- 一覧画面 -->
+  <div id="list-screen" class="app screen is-active" aria-hidden="false">
+    <header class="header">
+      <h1>メモ</h1>
+      <div class="header-actions">
+        <button type="button" id="btn-new" class="btn btn-primary" aria-label="新しいメモを作成">
+          ＋ 新規
+        </button>
+      </div>
+    </header>
+    <main class="main">
+      <div id="empty-state" class="empty">
+        <div class="empty-icon" aria-hidden="true">📝</div>
+        <h2>メモがありません</h2>
+        <p>右上の「新規」から最初のメモを作成しましょう。</p>
+        <button type="button" id="btn-empty-new" class="btn btn-primary">メモを作成</button>
+      </div>
+      <ul id="note-list" class="note-list" aria-label="メモ一覧" hidden></ul>
+    </main>
+  </div>
+
+  <!-- 編集画面 -->
+  <div id="editor-screen" class="screen" aria-hidden="true">
+    <header class="header">
+      <button type="button" id="btn-back" class="btn btn-icon" aria-label="一覧に戻る">←</button>
+      <h1 id="editor-heading">メモを編集</h1>
+      <div class="header-actions">
+        <button type="button" id="btn-delete-in-editor" class="btn btn-icon" aria-label="削除" hidden title="削除">🗑</button>
+      </div>
+    </header>
+    <div class="editor-body">
+      <div>
+        <label class="field-label" for="note-title">タイトル</label>
+        <input
+          type="text"
+          id="note-title"
+          class="input-title"
+          placeholder="タイトル（任意）"
+          maxlength="200"
+          autocomplete="off"
+          enterkeyhint="next"
+        />
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <label class="field-label" for="note-content">本文</label>
+        <textarea
+          id="note-content"
+          class="input-content"
+          placeholder="メモを入力…"
+          spellcheck="true"
+        ></textarea>
+      </div>
+      <div class="editor-actions">
+        <button type="button" id="btn-save" class="btn btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 削除確認モーダル -->
+  <div
+    id="delete-modal"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal">
+      <h2 id="delete-modal-title">メモを削除しますか？</h2>
+      <p>この操作は取り消せません。</p>
+      <div class="modal-actions">
+        <button type="button" id="btn-cancel-delete" class="btn btn-ghost">キャンセル</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

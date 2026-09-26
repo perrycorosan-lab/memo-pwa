@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="メモ">
+  <rect width="512" height="512" rx="112" fill="#FFECB3"/>
+  <rect x="128" y="128" width="256" height="256" rx="40" fill="#FFFCF5" stroke="#5C4033" stroke-width="8"/>
+  <path d="M336 128 L384 128 L384 176 Z" fill="#D4A574"/>
+  <line x1="168" y1="220" x2="344" y2="220" stroke="#D4A574" stroke-width="12" stroke-linecap="round"/>
+  <line x1="168" y1="268" x2="344" y2="268" stroke="#C8B496" stroke-width="10" stroke-linecap="round"/>
+  <line x1="168" y1="316" x2="292" y2="316" stroke="#C8B496" stroke-width="10" stroke-linecap="round"/>
+</svg>
