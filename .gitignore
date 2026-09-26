@@ -1,0 +1,2 @@
+# ローカル用 Firebase 設定（本番のキーはここに置く。リポジトリにコミットしない）
+firebase-config.local.js

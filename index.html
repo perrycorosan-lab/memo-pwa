@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#FFECB3" />
-  <meta name="description" content="シンプルなメモアプリ。オフラインでも使えます。" />
+  <meta name="description" content="シンプルなメモアプリ。オフラインでも使え、Google サインインで端末間同期もできます。" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="メモ" />
@@ -14,18 +14,39 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
   <title>メモ</title>
+  <!--
+    任意: ここで設定を注入することもできます（firebase-config.local.js より優先）
+    <script>
+      window.__FIREBASE_CONFIG__ = {
+        apiKey: "...",
+        authDomain: "...",
+        projectId: "...",
+        storageBucket: "...",
+        messagingSenderId: "...",
+        appId: "..."
+      };
+    </script>
+  -->
 </head>
 <body>
   <!-- 一覧画面 -->
   <div id="list-screen" class="app screen is-active" aria-hidden="false">
     <header class="header">
-      <h1>メモ</h1>
+      <div class="header-title-block">
+        <h1>メモ</h1>
+        <p id="sync-status" class="sync-status" data-status="ローカルのみ" aria-live="polite">ローカルのみ</p>
+      </div>
       <div class="header-actions">
         <button type="button" id="btn-new" class="btn btn-primary" aria-label="新しいメモを作成">
           ＋ 新規
         </button>
       </div>
     </header>
+    <div id="auth-bar" class="auth-bar">
+      <span id="auth-user" class="auth-user" hidden></span>
+      <button type="button" id="btn-sign-in" class="btn btn-ghost btn-sm">Googleでサインイン</button>
+      <button type="button" id="btn-sign-out" class="btn btn-ghost btn-sm" hidden>サインアウト</button>
+    </div>
     <main class="main">
       <div id="empty-state" class="empty">
         <div class="empty-icon" aria-hidden="true">📝</div>
@@ -95,6 +116,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="./app.js" defer></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>

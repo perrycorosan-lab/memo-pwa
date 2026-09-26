@@ -414,3 +414,66 @@ button {
     align-items: center;
   }
 }
+
+/* —— Auth / sync —— */
+.header-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.header-title-block h1 {
+  margin: 0;
+}
+
+.sync-status {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.sync-status[data-status="同期済み"] {
+  color: #5a8f5a;
+}
+
+.sync-status[data-status="同期中…"],
+.sync-status[data-status="サインイン中…"] {
+  color: #b8860b;
+}
+
+.sync-status[data-status="同期エラー"],
+.sync-status[data-status="未設定"] {
+  color: var(--danger);
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.auth-user {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-sm {
+  min-height: 36px;
+  min-width: auto;
+  padding: 0 14px;
+  font-size: 0.85rem;
+}
