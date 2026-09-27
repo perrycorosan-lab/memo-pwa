@@ -806,15 +806,24 @@ function bindEvents() {
         showToast('Firebase 設定が必要です（README 参照）');
         return;
       }
-      syncApi.signIn().catch((err) => {
-        console.error(err);
-        const code = err && err.code;
-        if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-          showToast('サインインがキャンセルされました');
-          return;
-        }
-        showToast('サインインに失敗しました');
-      });
+      if (btnSignIn.disabled) return;
+      btnSignIn.disabled = true;
+      showToast('Googleへ移動します…');
+      syncApi
+        .signIn()
+        .catch((err) => {
+          console.error(err);
+          const code = err && err.code;
+          if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+            showToast('サインインがキャンセルされました');
+            return;
+          }
+          showToast('サインインに失敗しました');
+        })
+        .finally(() => {
+          // redirect の場合はページ遷移するのでここはほぼ到達しない
+          btnSignIn.disabled = false;
+        });
     });
   }
   if (btnSignOut) {

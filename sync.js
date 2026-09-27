@@ -524,13 +524,40 @@ export async function createSync(deps) {
     );
   }
 
+  function prefersRedirectSignIn() {
+    // スマホ・タブレット・ホーム画面追加の PWA では popup が無反応になりやすい
+    const ua = navigator.userAgent || '';
+    const coarse =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(pointer: coarse)').matches;
+    const narrow =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(max-width: 900px)').matches;
+    const standalone =
+      (typeof window.matchMedia === 'function' &&
+        window.matchMedia('(display-mode: standalone)').matches) ||
+      // iOS Safari
+      (typeof navigator !== 'undefined' && navigator.standalone === true);
+    const mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    return standalone || mobileUa || (coarse && narrow);
+  }
+
   async function signIn() {
     setStatus('サインイン中…');
     try {
+      if (prefersRedirectSignIn()) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       await signInWithPopup(auth, provider);
     } catch (err) {
       const code = err && err.code;
-      if (code === 'auth/popup-blocked') {
+      // デスクトップでも popup が弾かれた／非対応なら redirect へ
+      if (
+        code === 'auth/popup-blocked' ||
+        code === 'auth/operation-not-supported-in-this-environment' ||
+        code === 'auth/cancelled-popup-request'
+      ) {
         await signInWithRedirect(auth, provider);
         return;
       }
