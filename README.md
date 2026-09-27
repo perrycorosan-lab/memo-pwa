@@ -7,29 +7,41 @@
 ## 機能
 
 - メモ一覧（タイトル・プレビュー・更新日時）
+- **プロジェクト**でメモをグループ化（チップで絞り込み／管理モーダル）
 - 作成・編集・削除（削除は確認ダイアログあり／ソフトデリートで同期）
 - 空のときの案内（エンプティステート）
 - **IndexedDB** をオフラインキャッシュとして永続保存
-- **Firebase**: Google サインイン時にクラウドへリアルタイム同期
+- **Firebase**: Google サインイン時にクラウドへリアルタイム同期（メモ＋プロジェクト）
 - サインアウト時は従来どおりローカルのみで動作
 - インストール可能な PWA（マニフェスト＋サービスワーカー）
 - Android Chrome 向けの大きなタップ領域・セーフエリア対応
 
 ## データ構造
 
-各メモは次のフィールドを持ちます。
+### メモ（notes）
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
 | `id` | string | 一意 ID（UUID など） |
 | `title` | string | タイトル |
 | `content` | string | 本文 |
+| `projectId` | string \| null | 所属プロジェクト。`null` / 未設定 = 未分類 |
 | `updatedAt` | number | 更新時刻（UNIX ms） |
 | `deletedAt` | number（任意） | ソフトデリート時刻。一覧には出ない |
 
-- **ローカル**: ブラウザの IndexedDB（`memo-pwa-db`）
-- **クラウド**（サインイン時）: Firestore `users/{uid}/notes/{noteId}`
+### プロジェクト（projects）
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `id` | string | 一意 ID |
+| `name` | string | 表示名 |
+| `updatedAt` | number | 更新時刻（UNIX ms） |
+| `deletedAt` | number（任意） | ソフトデリート。紐づくメモは `projectId: null` に更新 |
+
+- **ローカル**: ブラウザの IndexedDB（`memo-pwa-db`、ストア `notes` / `projects`）
+- **クラウド**（サインイン時）: Firestore `users/{uid}/notes/{noteId}` と `users/{uid}/projects/{projectId}`
 - 競合時は **新しい `updatedAt` を優先** してマージします
+- プロジェクト削除時、メモ本体は削除せず未分類へ移します
 
 ## ファイル構成
 
@@ -89,11 +101,15 @@ service cloud.firestore {
       allow read, write: if request.auth != null
                          && request.auth.uid == userId;
     }
+    match /users/{userId}/projects/{projectId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
   }
 }
 ```
 
-これで **サインインしたユーザー本人の `users/{uid}/notes/**` 以外は読み書きできません**。
+これで **サインインしたユーザー本人の `users/{uid}/notes/**` と `users/{uid}/projects/**` 以外は読み書きできません**。
 
 ### 5. Web アプリを登録して設定値を取得
 
@@ -198,13 +214,14 @@ Firebase 未設定でも **ローカルメモは使えます**（ステータス
 | サインイン直後 | ローカルとクラウドを `updatedAt` でマージ（新しい方優先）し、不足分を双方向反映 |
 | サインイン中 | Firestore `onSnapshot` でリアルタイム反映。保存・削除時は即プッシュ |
 | 削除 | `deletedAt` 付きソフトデリートを同期（他端末の一覧からも消える） |
+| プロジェクト | 作成・改名・削除を同様に同期。削除時は紐づくメモの `projectId` を `null` に更新してプッシュ |
 
 ## サービスワーカーと Firebase
 
 - アプリ本体はキャッシュしてオフライン起動可能
 - `gstatic` / `googleapis` など Firebase CDN・API は **キャッシュせずネットワークへ透過**
 - `firebase-config.local.js` もキャッシュしません
-- キャッシュ名: `memo-pwa-v2`（変更時は次回訪問で旧キャッシュ破棄）
+- キャッシュ名: `memo-pwa-v4`（変更時は次回訪問で旧キャッシュ破棄）
 
 ## 注意事項・制限
 

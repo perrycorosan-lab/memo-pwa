@@ -47,11 +47,17 @@
       <button type="button" id="btn-sign-in" class="btn btn-ghost btn-sm">Googleでサインイン</button>
       <button type="button" id="btn-sign-out" class="btn btn-ghost btn-sm" hidden>サインアウト</button>
     </div>
+    <div class="project-bar" role="navigation" aria-label="プロジェクト">
+      <div id="project-chips" class="project-chips" role="tablist"></div>
+      <button type="button" id="btn-projects-manage" class="btn btn-ghost btn-sm project-manage-btn" aria-label="プロジェクト管理">
+        管理
+      </button>
+    </div>
     <main class="main">
       <div id="empty-state" class="empty">
         <div class="empty-icon" aria-hidden="true">📝</div>
-        <h2>メモがありません</h2>
-        <p>右上の「新規」から最初のメモを作成しましょう。</p>
+        <h2 id="empty-title">メモがありません</h2>
+        <p id="empty-desc">右上の「新規」から最初のメモを作成しましょう。</p>
         <button type="button" id="btn-empty-new" class="btn btn-primary">メモを作成</button>
       </div>
       <ul id="note-list" class="note-list" aria-label="メモ一覧" hidden></ul>
@@ -80,6 +86,12 @@
           enterkeyhint="next"
         />
       </div>
+      <div>
+        <label class="field-label" for="note-project">プロジェクト</label>
+        <select id="note-project" class="input-select" aria-label="プロジェクトを選択">
+          <option value="">未分類</option>
+        </select>
+      </div>
       <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
         <label class="field-label" for="note-content">本文</label>
         <textarea
@@ -106,10 +118,66 @@
   >
     <div class="modal">
       <h2 id="delete-modal-title">メモを削除しますか？</h2>
-      <p>この操作は取り消せません。</p>
+      <p id="delete-modal-desc">この操作は取り消せません。</p>
       <div class="modal-actions">
         <button type="button" id="btn-cancel-delete" class="btn btn-ghost">キャンセル</button>
         <button type="button" id="btn-confirm-delete" class="btn btn-danger">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- プロジェクト管理モーダル -->
+  <div
+    id="projects-modal"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="projects-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal modal-sheet">
+      <h2 id="projects-modal-title">プロジェクト管理</h2>
+      <p class="modal-hint">追加・名前変更・削除ができます。削除したプロジェクトのメモは「未分類」になります。</p>
+      <form id="project-add-form" class="project-add-form">
+        <input
+          type="text"
+          id="project-name-input"
+          class="input-title"
+          placeholder="新しいプロジェクト名"
+          maxlength="60"
+          autocomplete="off"
+          required
+        />
+        <button type="submit" id="btn-add-project" class="btn btn-primary btn-sm">追加</button>
+      </form>
+      <ul id="project-manage-list" class="project-manage-list" aria-label="プロジェクト一覧"></ul>
+      <div class="modal-actions">
+        <button type="button" id="btn-close-projects" class="btn btn-ghost">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- プロジェクト名変更モーダル -->
+  <div
+    id="rename-modal"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="rename-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal">
+      <h2 id="rename-modal-title">名前を変更</h2>
+      <input
+        type="text"
+        id="rename-project-input"
+        class="input-title"
+        maxlength="60"
+        autocomplete="off"
+      />
+      <div class="modal-actions" style="margin-top:16px;">
+        <button type="button" id="btn-cancel-rename" class="btn btn-ghost">キャンセル</button>
+        <button type="button" id="btn-confirm-rename" class="btn btn-primary">保存</button>
       </div>
     </div>
   </div>
