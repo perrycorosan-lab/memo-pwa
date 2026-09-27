@@ -84,24 +84,35 @@ button {
 }
 
 .header-list {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
+  position: relative;
 }
 
 .header-list .header-title-block {
-  justify-self: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
   min-width: 0;
+  max-width: min(46vw, 200px);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.header-list #btn-new {
-  justify-self: start;
+.header-list .header-title-block .sync-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.header-list #btn-new,
 .header-list #btn-settings {
-  justify-self: end;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .header h1 {
