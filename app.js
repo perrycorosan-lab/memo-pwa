@@ -30,9 +30,6 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const listScreen = $('#list-screen');
 const editorScreen = $('#editor-screen');
 const noteList = $('#note-list');
-const emptyState = $('#empty-state');
-const emptyTitle = $('#empty-title');
-const emptyDesc = $('#empty-desc');
 const titleInput = $('#note-title');
 const contentInput = $('#note-content');
 const projectSelect = $('#note-project');
@@ -382,28 +379,6 @@ function filterNotes(notes) {
   return notes.filter((n) => noteProjectId(n) === selectedFilter);
 }
 
-function setEmptyCopy(filteredCount, totalCount, projects) {
-  if (filteredCount > 0) return;
-  if (totalCount === 0 && projects.length === 0) {
-    emptyTitle.textContent = 'メモがありません';
-    emptyDesc.textContent = '右上の「新規」から最初のメモを作成しましょう。';
-    return;
-  }
-  if (selectedFilter === 'inbox') {
-    emptyTitle.textContent = '未分類のメモはありません';
-    emptyDesc.textContent = 'プロジェクトに属していないメモがここに表示されます。';
-    return;
-  }
-  if (selectedFilter !== 'all') {
-    const p = projects.find((x) => x.id === selectedFilter);
-    const name = p ? p.name : 'このプロジェクト';
-    emptyTitle.textContent = `「${name}」にメモがありません`;
-    emptyDesc.textContent = '「新規」からメモを作成するか、編集画面でプロジェクトを割り当ててください。';
-    return;
-  }
-  emptyTitle.textContent = 'メモがありません';
-  emptyDesc.textContent = '右上の「新規」から最初のメモを作成しましょう。';
-}
 
 async function renderProjectChips() {
   const projects = await getActiveProjects();
@@ -462,13 +437,8 @@ async function renderList() {
   const notes = filterNotes(allNotes);
   noteList.innerHTML = '';
   if (!notes.length) {
-    setEmptyCopy(0, allNotes.length, projects);
-    emptyState.hidden = false;
-    noteList.hidden = true;
     return;
   }
-  emptyState.hidden = true;
-  noteList.hidden = false;
   const projectNameById = new Map(projects.map((p) => [p.id, p.name || '無題']));
   const frag = document.createDocumentFragment();
   for (const note of notes) {
@@ -728,12 +698,6 @@ async function confirmRename() {
 // —— Events ——
 function bindEvents() {
   $('#btn-new').addEventListener('click', () => {
-    openCreate().catch((e) => {
-      console.error(e);
-      showToast('開けませんでした');
-    });
-  });
-  $('#btn-empty-new').addEventListener('click', () => {
     openCreate().catch((e) => {
       console.error(e);
       showToast('開けませんでした');

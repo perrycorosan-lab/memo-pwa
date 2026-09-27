@@ -210,36 +210,6 @@ button {
   color: var(--text-muted);
 }
 
-/* —— Empty state —— */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--text-muted);
-  gap: 12px;
-  min-height: 50vh;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  line-height: 1;
-  opacity: 0.85;
-}
-
-.empty h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text);
-}
-
-.empty p {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
 /* —— Editor screen —— */
 .screen {
   display: none;
