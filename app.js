@@ -440,9 +440,11 @@ function showEditor(isNew) {
   listScreen.setAttribute('aria-hidden', 'true');
   editorScreen.setAttribute('aria-hidden', 'false');
   editorHeading.textContent = isNew ? '新しいメモ' : 'メモを編集';
-  // スマホでは開いた直後にキーボードを出さない（入力欄タップで開く）
-  if (titleInput) titleInput.blur();
-  if (contentInput) contentInput.blur();
+  // 新規→タイトル、既存→本文にフォーカス（IME もそこに開く）
+  requestAnimationFrame(() => {
+    const el = isNew ? titleInput : contentInput;
+    if (el) el.focus();
+  });
 }
 
 function filterNotes(notes) {
