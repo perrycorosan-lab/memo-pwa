@@ -342,17 +342,30 @@ function updateAuthUi(user) {
 }
 
 function openSettingsModal() {
-  settingsModal.classList.add('is-open');
-  settingsModal.setAttribute('aria-hidden', 'false');
+  const modal = settingsModal || document.getElementById('settings-modal');
+  if (!modal) {
+    console.error('settings-modal not found');
+    showToast('設定画面を開けませんでした');
+    return;
+  }
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  // クラス漏れでも必ず見せる
+  modal.style.display = 'flex';
   requestAnimationFrame(() => {
-    const firstAction = settingsModal.querySelector('button:not([hidden]):not([disabled])');
+    const firstAction = modal.querySelector(
+      'button:not([hidden]):not([disabled]), [href], input:not([disabled])'
+    );
     if (firstAction) firstAction.focus();
   });
 }
 
 function closeSettingsModal() {
-  settingsModal.classList.remove('is-open');
-  settingsModal.setAttribute('aria-hidden', 'true');
+  const modal = settingsModal || document.getElementById('settings-modal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.style.display = '';
 }
 
 function showList() {
@@ -698,10 +711,22 @@ async function confirmRename() {
 
 // —— Events ——
 function bindEvents() {
-  $('#btn-settings').addEventListener('click', openSettingsModal);
-  $('#btn-close-settings').addEventListener('click', closeSettingsModal);
-  settingsModal.addEventListener('click', (e) => {
-    if (e.target === settingsModal) closeSettingsModal();
+  // 設定は委譲でも拾う（キャッシュずれ・再描画でも確実）
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('#btn-settings')) {
+      e.preventDefault();
+      openSettingsModal();
+      return;
+    }
+    if (t.closest('#btn-close-settings')) {
+      e.preventDefault();
+      closeSettingsModal();
+      return;
+    }
+    const modal = settingsModal || document.getElementById('settings-modal');
+    if (modal && t === modal) closeSettingsModal();
   });
 
   $('#btn-new').addEventListener('click', () => {

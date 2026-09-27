@@ -1,7 +1,7 @@
 /* メモ PWA Service Worker — offline shell + app assets
  * Firebase CDN / API はキャッシュせずネットワークへ透過する
  */
-const CACHE_NAME = 'memo-pwa-v7';
+const CACHE_NAME = 'memo-pwa-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './app.js',
   './sync.js',
   './firebase-config.js',
+  './firebase-config.runtime.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -33,13 +34,26 @@ function isFirebaseOrCdn(url) {
   );
 }
 
+function isAppShell(url) {
+  const p = url.pathname;
+  return (
+    p.endsWith('/') ||
+    p.endsWith('/index.html') ||
+    p.endsWith('/app.js') ||
+    p.endsWith('/sync.js') ||
+    p.endsWith('/styles.css') ||
+    p.endsWith('/sw.js') ||
+    p.endsWith('/firebase-config.js') ||
+    p.endsWith('/firebase-config.runtime.js')
+  );
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
       .then((cache) =>
         cache.addAll(ASSETS).catch((err) => {
-          // firebase-config.local.js 等が無くても本体は起動できるように個別追加
           console.warn('cache.addAll partial failure', err);
           return Promise.all(
             ASSETS.map((u) => cache.add(u).catch(() => undefined))
@@ -72,14 +86,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Firebase SDK / Auth / Firestore は必ずネットワーク（キャッシュしない）
   if (isFirebaseOrCdn(url)) {
     return;
   }
 
-  // ローカル設定はキャッシュせず常にネットワーク優先（無い場合は無視）
   if (url.pathname.endsWith('/firebase-config.local.js')) {
     event.respondWith(fetch(request).catch(() => new Response('', { status: 404 })));
+    return;
+  }
+
+  // HTML/JS/CSS はネットワーク優先（更新がすぐ届く）
+  if (isAppShell(url)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
     return;
   }
 
@@ -87,7 +115,6 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request)
         .then((response) => {
-          // same-origin の成功レスポンスのみキャッシュ（CDN の cors は除外）
           if (response && response.status === 200 && response.type === 'basic') {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));

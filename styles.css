@@ -294,13 +294,13 @@ button {
   display: none;
   align-items: flex-end;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
   padding: 16px;
   padding-bottom: calc(16px + var(--safe-bottom));
 }
 
 .modal-backdrop.is-open {
-  display: flex;
+  display: flex !important;
 }
 
 .modal {
