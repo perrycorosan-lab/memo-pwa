@@ -440,7 +440,9 @@ function showEditor(isNew) {
   listScreen.setAttribute('aria-hidden', 'true');
   editorScreen.setAttribute('aria-hidden', 'false');
   editorHeading.textContent = isNew ? '新しいメモ' : 'メモを編集';
-  requestAnimationFrame(() => titleInput.focus());
+  // スマホでは開いた直後にキーボードを出さない（入力欄タップで開く）
+  if (titleInput) titleInput.blur();
+  if (contentInput) contentInput.blur();
 }
 
 function filterNotes(notes) {
