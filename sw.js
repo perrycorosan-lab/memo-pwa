@@ -1,7 +1,7 @@
 /* メモ PWA Service Worker — offline shell + app assets
  * Firebase CDN / API はキャッシュせずネットワークへ透過する
  */
-const CACHE_NAME = 'memo-pwa-v8';
+const CACHE_NAME = 'memo-pwa-v9';
 const ASSETS = [
   './',
   './index.html',

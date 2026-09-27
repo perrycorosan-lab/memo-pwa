@@ -83,6 +83,27 @@ button {
   flex-shrink: 0;
 }
 
+.header-list {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-list .header-title-block {
+  justify-self: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.header-list #btn-new {
+  justify-self: start;
+}
+
+.header-list #btn-settings {
+  justify-self: end;
+}
+
 .header h1 {
   margin: 0;
   font-size: 1.25rem;

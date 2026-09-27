@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./styles.css?v=9" />
   <title>メモ</title>
   <!--
     任意: ここで設定を注入することもできます（firebase-config.local.js より優先）
@@ -31,17 +31,15 @@
 <body>
   <!-- 一覧画面 -->
   <div id="list-screen" class="app screen is-active" aria-hidden="false">
-    <header class="header">
+    <header class="header header-list">
+      <button type="button" id="btn-new" class="btn btn-primary" aria-label="新しいメモを作成">
+        ＋ 新規
+      </button>
       <div class="header-title-block">
         <h1>メモ</h1>
         <p id="sync-status" class="sync-status" data-status="ローカルのみ" aria-live="polite">ローカルのみ</p>
       </div>
-      <div class="header-actions">
-        <button type="button" id="btn-settings" class="btn btn-ghost btn-sm">設定</button>
-        <button type="button" id="btn-new" class="btn btn-primary" aria-label="新しいメモを作成">
-          ＋ 新規
-        </button>
-      </div>
+      <button type="button" id="btn-settings" class="btn btn-ghost btn-sm">設定</button>
     </header>
     <div class="project-bar" role="navigation" aria-label="プロジェクト">
       <div id="project-chips" class="project-chips" role="tablist"></div>
@@ -200,6 +198,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="./app.js?v=8"></script>
+  <script type="module" src="./app.js?v=9"></script>
 </body>
 </html>
