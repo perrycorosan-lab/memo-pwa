@@ -469,8 +469,8 @@ async function renderProjectChips() {
 
   const chips = [
     { id: 'all', label: 'すべて' },
-    { id: 'inbox', label: '未分類' },
-    ...projects.map((p) => ({ id: p.id, label: p.name || '無題' }))
+    ...projects.map((p) => ({ id: p.id, label: p.name || '無題' })),
+    { id: 'inbox', label: '未分類' }
   ];
 
   projectChips.innerHTML = '';
