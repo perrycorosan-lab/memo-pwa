@@ -6,7 +6,7 @@
 import { loadFirebaseConfig } from './firebase-config.js';
 
 /** @typedef {{ id: string, title: string, content: string, projectId?: string|null, updatedAt: number, deletedAt?: number|null }} Note */
-/** @typedef {{ id: string, name: string, updatedAt: number, deletedAt?: number|null }} Project */
+/** @typedef {{ id: string, name: string, sortOrder?: number, updatedAt: number, deletedAt?: number|null }} Project */
 
 const FIREBASE_VERSION = '10.14.1';
 const gstatic = (pkg) =>
@@ -178,6 +178,9 @@ export async function createSync(deps) {
       name: typeof data.name === 'string' ? data.name : '',
       updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0
     };
+    if (typeof data.sortOrder === 'number' && !Number.isNaN(data.sortOrder)) {
+      project.sortOrder = data.sortOrder;
+    }
     if (data.deletedAt != null && data.deletedAt !== undefined) {
       project.deletedAt =
         typeof data.deletedAt === 'number' ? data.deletedAt : null;
@@ -207,6 +210,9 @@ export async function createSync(deps) {
       name: project.name || '',
       updatedAt: project.updatedAt || Date.now()
     };
+    if (typeof project.sortOrder === 'number' && !Number.isNaN(project.sortOrder)) {
+      payload.sortOrder = project.sortOrder;
+    }
     if (project.deletedAt != null) {
       payload.deletedAt = project.deletedAt;
     }
@@ -225,9 +231,14 @@ export async function createSync(deps) {
   }
 
   function projectChanged(local, winner) {
+    const localOrder =
+      typeof local?.sortOrder === 'number' ? local.sortOrder : null;
+    const winnerOrder =
+      typeof winner?.sortOrder === 'number' ? winner.sortOrder : null;
     return (
       !local ||
       local.name !== winner.name ||
+      localOrder !== winnerOrder ||
       local.updatedAt !== winner.updatedAt ||
       (local.deletedAt || null) !== (winner.deletedAt || null)
     );

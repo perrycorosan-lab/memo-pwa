@@ -660,3 +660,25 @@ button {
   padding: 0 10px;
   font-size: 0.8rem;
 }
+
+
+.project-manage-reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.btn-reorder {
+  min-width: 40px;
+  min-height: 36px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 8px;
+}
+
+.btn-reorder:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}

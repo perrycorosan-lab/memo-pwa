@@ -167,11 +167,66 @@ function getAllProjectsIncludingDeleted() {
   });
 }
 
+/** 並び順キー（未設定は updatedAt、それも無ければ 0） */
+function projectSortKey(p) {
+  if (typeof p.sortOrder === 'number' && !Number.isNaN(p.sortOrder)) {
+    return p.sortOrder;
+  }
+  return typeof p.updatedAt === 'number' ? p.updatedAt : 0;
+}
+
+function compareProjectsBySortOrder(a, b) {
+  const ka = projectSortKey(a);
+  const kb = projectSortKey(b);
+  if (ka !== kb) return ka - kb;
+  const nameCmp = (a.name || '').localeCompare(b.name || '', 'ja');
+  if (nameCmp !== 0) return nameCmp;
+  return String(a.id).localeCompare(String(b.id));
+}
+
 async function getActiveProjects() {
   const all = await getAllProjectsIncludingDeleted();
-  return all
-    .filter((p) => !p.deletedAt)
-    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'));
+  return all.filter((p) => !p.deletedAt).sort(compareProjectsBySortOrder);
+}
+
+/**
+ * sortOrder 未設定のプロジェクトへ連番を付与して安定化する。
+ * @returns {Promise<object[]>} 更新したプロジェクト一覧
+ */
+async function ensureProjectSortOrders() {
+  const active = await getActiveProjects();
+  const needs = active.some((p) => typeof p.sortOrder !== 'number');
+  if (!needs) return [];
+
+  const now = Date.now();
+  const updatedList = [];
+  for (let i = 0; i < active.length; i++) {
+    const p = active[i];
+    if (typeof p.sortOrder === 'number' && p.sortOrder === i) continue;
+    const updated = { ...p, sortOrder: i, updatedAt: now };
+    await putProject(updated);
+    updatedList.push(updated);
+  }
+  if (syncApi && syncApi.configured) {
+    for (const project of updatedList) {
+      try {
+        await syncApi.pushProject(project);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+  return updatedList;
+}
+
+async function nextProjectSortOrder() {
+  const active = await getActiveProjects();
+  let max = -1;
+  for (const p of active) {
+    const o = typeof p.sortOrder === 'number' ? p.sortOrder : -1;
+    if (o > max) max = o;
+  }
+  return max + 1;
 }
 
 function getProject(id) {
@@ -215,6 +270,9 @@ async function softDeleteProjectAndUnassignNotes(projectId) {
     updatedAt: now,
     deletedAt: now
   };
+  if (existing && typeof existing.sortOrder === 'number') {
+    project.sortOrder = existing.sortOrder;
+  }
   await putProject(project);
 
   const notes = await getAllNotesIncludingDeleted();
@@ -611,6 +669,7 @@ function closeProjectsModal() {
 }
 
 async function renderProjectsManageList() {
+  await ensureProjectSortOrders();
   const projects = await getActiveProjects();
   projectManageList.innerHTML = '';
   if (!projects.length) {
@@ -621,17 +680,24 @@ async function renderProjectsManageList() {
     return;
   }
   const frag = document.createDocumentFragment();
-  for (const p of projects) {
+  projects.forEach((p, idx) => {
     const li = document.createElement('li');
     li.className = 'project-manage-item';
+    const idAttr = escapeHtml(p.id);
+    const upDisabled = idx === 0 ? ' disabled' : '';
+    const downDisabled = idx === projects.length - 1 ? ' disabled' : '';
     li.innerHTML = `
+      <div class="project-manage-reorder">
+        <button type="button" class="btn btn-ghost btn-reorder" data-move-up="${idAttr}" aria-label="上へ移動"${upDisabled}>↑</button>
+        <button type="button" class="btn btn-ghost btn-reorder" data-move-down="${idAttr}" aria-label="下へ移動"${downDisabled}>↓</button>
+      </div>
       <span class="project-manage-name">${escapeHtml(p.name || '無題')}</span>
       <div class="project-manage-actions">
-        <button type="button" class="btn btn-ghost btn-sm" data-rename="${escapeHtml(p.id)}">名前変更</button>
-        <button type="button" class="btn btn-danger btn-sm" data-delete-project="${escapeHtml(p.id)}">削除</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-rename="${idAttr}">名前変更</button>
+        <button type="button" class="btn btn-danger btn-sm" data-delete-project="${idAttr}">削除</button>
       </div>`;
     frag.appendChild(li);
-  }
+  });
   projectManageList.appendChild(frag);
 }
 
@@ -644,6 +710,7 @@ async function addProject(name) {
   const project = {
     id: projectUid(),
     name: trimmed,
+    sortOrder: await nextProjectSortOrder(),
     updatedAt: Date.now()
   };
   await putProject(project);
@@ -658,6 +725,40 @@ async function addProject(name) {
     showToast('プロジェクトを追加しました');
   }
   projectNameInput.value = '';
+  await renderProjectsManageList();
+  await renderList();
+}
+
+
+async function reorderProject(id, direction) {
+  await ensureProjectSortOrders();
+  const list = await getActiveProjects();
+  const idx = list.findIndex((p) => p.id === id);
+  const j = idx + direction;
+  if (idx < 0 || j < 0 || j >= list.length) return;
+
+  const now = Date.now();
+  const a = list[idx];
+  const b = list[j];
+  let orderA = typeof a.sortOrder === 'number' ? a.sortOrder : idx;
+  let orderB = typeof b.sortOrder === 'number' ? b.sortOrder : j;
+  if (orderA === orderB) {
+    orderA = idx;
+    orderB = j;
+  }
+  const updatedA = { ...a, sortOrder: orderB, updatedAt: now };
+  const updatedB = { ...b, sortOrder: orderA, updatedAt: now };
+  await putProject(updatedA);
+  await putProject(updatedB);
+  if (syncApi && syncApi.configured) {
+    try {
+      await syncApi.pushProject(updatedA);
+      await syncApi.pushProject(updatedB);
+    } catch (e) {
+      console.error(e);
+      showToast('順序を変更しました（クラウド同期に失敗）');
+    }
+  }
   await renderProjectsManageList();
   await renderList();
 }
@@ -691,9 +792,11 @@ async function confirmRename() {
   const project = {
     id,
     name,
-    updatedAt: Date.now(),
-    ...(existing && existing.deletedAt ? {} : {})
+    updatedAt: Date.now()
   };
+  if (existing && typeof existing.sortOrder === 'number') {
+    project.sortOrder = existing.sortOrder;
+  }
   await putProject(project);
   if (syncApi && syncApi.configured) {
     try {
@@ -785,6 +888,22 @@ function bindEvents() {
   });
 
   projectManageList.addEventListener('click', (e) => {
+    const upBtn = e.target.closest('[data-move-up]');
+    if (upBtn && !upBtn.disabled) {
+      reorderProject(upBtn.getAttribute('data-move-up'), -1).catch((err) => {
+        console.error(err);
+        showToast('並び替えに失敗しました');
+      });
+      return;
+    }
+    const downBtn = e.target.closest('[data-move-down]');
+    if (downBtn && !downBtn.disabled) {
+      reorderProject(downBtn.getAttribute('data-move-down'), 1).catch((err) => {
+        console.error(err);
+        showToast('並び替えに失敗しました');
+      });
+      return;
+    }
     const renameBtn = e.target.closest('[data-rename]');
     if (renameBtn) {
       const id = renameBtn.getAttribute('data-rename');
@@ -890,7 +1009,11 @@ function registerSW() {
 }
 
 async function refreshUiFromRemote() {
+  await ensureProjectSortOrders();
   await renderList();
+  if (projectsModal.classList.contains('is-open')) {
+    await renderProjectsManageList();
+  }
   if (!editorScreen.classList.contains('is-active')) return;
   await fillProjectSelect(projectSelect.value);
 }
@@ -902,6 +1025,7 @@ async function init() {
 
   try {
     await openDb();
+    await ensureProjectSortOrders();
     await renderList();
     showList();
   } catch (err) {
