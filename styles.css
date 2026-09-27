@@ -419,26 +419,39 @@ button {
   color: var(--danger);
 }
 
-.auth-bar {
+.settings-status-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  flex-wrap: wrap;
 }
 
-.auth-user {
-  flex: 1;
-  min-width: 0;
+.settings-label {
+  color: var(--text-muted);
   font-size: 0.85rem;
-  font-weight: 600;
+}
+
+.settings-status-row .sync-status {
+  flex-shrink: 0;
+}
+
+.settings-auth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.settings-auth-user {
+  margin: 0 0 2px;
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .btn-sm {

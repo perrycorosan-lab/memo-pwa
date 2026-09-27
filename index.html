@@ -37,16 +37,12 @@
         <p id="sync-status" class="sync-status" data-status="ローカルのみ" aria-live="polite">ローカルのみ</p>
       </div>
       <div class="header-actions">
+        <button type="button" id="btn-settings" class="btn btn-ghost btn-sm">設定</button>
         <button type="button" id="btn-new" class="btn btn-primary" aria-label="新しいメモを作成">
           ＋ 新規
         </button>
       </div>
     </header>
-    <div id="auth-bar" class="auth-bar">
-      <span id="auth-user" class="auth-user" hidden></span>
-      <button type="button" id="btn-sign-in" class="btn btn-ghost btn-sm">Googleでサインイン</button>
-      <button type="button" id="btn-sign-out" class="btn btn-ghost btn-sm" hidden>サインアウト</button>
-    </div>
     <div class="project-bar" role="navigation" aria-label="プロジェクト">
       <div id="project-chips" class="project-chips" role="tablist"></div>
       <button type="button" id="btn-projects-manage" class="btn btn-ghost btn-sm project-manage-btn" aria-label="プロジェクト管理">
@@ -147,6 +143,32 @@
       <ul id="project-manage-list" class="project-manage-list" aria-label="プロジェクト一覧"></ul>
       <div class="modal-actions">
         <button type="button" id="btn-close-projects" class="btn btn-ghost">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル -->
+  <div
+    id="settings-modal"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settings-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal modal-sheet">
+      <h2 id="settings-modal-title">設定</h2>
+      <div class="settings-status-row">
+        <span class="settings-label">同期状態</span>
+        <p id="settings-sync-status" class="sync-status" data-status="ローカルのみ">ローカルのみ</p>
+      </div>
+      <div class="settings-auth-section">
+        <p id="settings-auth-user" class="settings-auth-user" hidden></p>
+        <button type="button" id="btn-settings-sign-in" class="btn btn-primary">Googleでサインイン</button>
+        <button type="button" id="btn-settings-sign-out" class="btn btn-ghost" hidden>サインアウト</button>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btn-close-settings" class="btn btn-ghost">閉じる</button>
       </div>
     </div>
   </div>

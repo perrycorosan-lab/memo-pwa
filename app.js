@@ -45,10 +45,11 @@ const projectNameInput = $('#project-name-input');
 const renameProjectInput = $('#rename-project-input');
 const toastEl = $('#toast');
 const syncStatusEl = $('#sync-status');
-const authBar = $('#auth-bar');
-const btnSignIn = $('#btn-sign-in');
-const btnSignOut = $('#btn-sign-out');
-const authUserEl = $('#auth-user');
+const settingsModal = $('#settings-modal');
+const settingsSyncStatusEl = $('#settings-sync-status');
+const settingsAuthUserEl = $('#settings-auth-user');
+const btnSettingsSignIn = $('#btn-settings-sign-in');
+const btnSettingsSignOut = $('#btn-settings-sign-out');
 
 // —— IndexedDB ——
 function openDb() {
@@ -308,50 +309,50 @@ function showToast(message) {
 }
 
 function setSyncStatus(text) {
-  if (!syncStatusEl) return;
-  syncStatusEl.textContent = text;
-  syncStatusEl.dataset.status = text;
+  if (syncStatusEl) {
+    syncStatusEl.textContent = text;
+    syncStatusEl.dataset.status = text;
+  }
+  if (settingsSyncStatusEl) {
+    settingsSyncStatusEl.textContent = text;
+    settingsSyncStatusEl.dataset.status = text;
+  }
 }
 
 function updateAuthUi(user) {
-  if (!authBar) return;
-  if (!syncApi || !syncApi.configured) {
-    authBar.hidden = false;
-    if (btnSignIn) {
-      btnSignIn.hidden = false;
-      btnSignIn.disabled = true;
-      btnSignIn.title = 'Firebase 設定が必要です';
-    }
-    if (btnSignOut) btnSignOut.hidden = true;
-    if (authUserEl) {
-      authUserEl.hidden = true;
-      authUserEl.textContent = '';
-    }
-    return;
+  const configured = Boolean(syncApi && syncApi.configured);
+  if (btnSettingsSignIn) {
+    btnSettingsSignIn.hidden = Boolean(user);
+    btnSettingsSignIn.disabled = !configured;
+    btnSettingsSignIn.title = configured ? '' : 'Firebase 設定が必要です';
   }
+  if (btnSettingsSignOut) btnSettingsSignOut.hidden = !user;
+  if (settingsAuthUserEl) {
+    settingsAuthUserEl.hidden = !user;
+    if (user) {
+      const name = user.displayName || '';
+      const email = user.email || '';
+      settingsAuthUserEl.textContent = name && email ? `${name}（${email}）` : name || email || 'サインイン中';
+      settingsAuthUserEl.title = email || name;
+    } else {
+      settingsAuthUserEl.textContent = '';
+      settingsAuthUserEl.removeAttribute('title');
+    }
+  }
+}
 
-  authBar.hidden = false;
-  if (user) {
-    if (btnSignIn) btnSignIn.hidden = true;
-    if (btnSignOut) btnSignOut.hidden = false;
-    if (authUserEl) {
-      authUserEl.hidden = false;
-      const label = user.displayName || user.email || 'サインイン中';
-      authUserEl.textContent = label;
-      authUserEl.title = user.email || label;
-    }
-  } else {
-    if (btnSignIn) {
-      btnSignIn.hidden = false;
-      btnSignIn.disabled = false;
-      btnSignIn.title = '';
-    }
-    if (btnSignOut) btnSignOut.hidden = true;
-    if (authUserEl) {
-      authUserEl.hidden = true;
-      authUserEl.textContent = '';
-    }
-  }
+function openSettingsModal() {
+  settingsModal.classList.add('is-open');
+  settingsModal.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => {
+    const firstAction = settingsModal.querySelector('button:not([hidden]):not([disabled])');
+    if (firstAction) firstAction.focus();
+  });
+}
+
+function closeSettingsModal() {
+  settingsModal.classList.remove('is-open');
+  settingsModal.setAttribute('aria-hidden', 'true');
 }
 
 function showList() {
@@ -697,6 +698,12 @@ async function confirmRename() {
 
 // —— Events ——
 function bindEvents() {
+  $('#btn-settings').addEventListener('click', openSettingsModal);
+  $('#btn-close-settings').addEventListener('click', closeSettingsModal);
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) closeSettingsModal();
+  });
+
   $('#btn-new').addEventListener('click', () => {
     openCreate().catch((e) => {
       console.error(e);
@@ -795,19 +802,23 @@ function bindEvents() {
       closeDeleteModal();
       return;
     }
+    if (settingsModal.classList.contains('is-open')) {
+      closeSettingsModal();
+      return;
+    }
     if (projectsModal.classList.contains('is-open')) {
       closeProjectsModal();
     }
   });
 
-  if (btnSignIn) {
-    btnSignIn.addEventListener('click', () => {
+  if (btnSettingsSignIn) {
+    btnSettingsSignIn.addEventListener('click', () => {
       if (!syncApi || !syncApi.configured) {
         showToast('Firebase 設定が必要です（README 参照）');
         return;
       }
-      if (btnSignIn.disabled) return;
-      btnSignIn.disabled = true;
+      if (btnSettingsSignIn.disabled) return;
+      btnSettingsSignIn.disabled = true;
       showToast('Googleへ移動します…');
       syncApi
         .signIn()
@@ -822,13 +833,14 @@ function bindEvents() {
         })
         .finally(() => {
           // redirect の場合はページ遷移するのでここはほぼ到達しない
-          btnSignIn.disabled = false;
+          btnSettingsSignIn.disabled = false;
         });
     });
   }
-  if (btnSignOut) {
-    btnSignOut.addEventListener('click', () => {
+  if (btnSettingsSignOut) {
+    btnSettingsSignOut.addEventListener('click', () => {
       if (!syncApi) return;
+      btnSettingsSignOut.disabled = true;
       syncApi
         .signOutUser()
         .then(() => {
@@ -837,6 +849,9 @@ function bindEvents() {
         .catch((err) => {
           console.error(err);
           showToast('サインアウトに失敗しました');
+        })
+        .finally(() => {
+          btnSettingsSignOut.disabled = false;
         });
     });
   }
