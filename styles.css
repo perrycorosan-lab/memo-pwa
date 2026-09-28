@@ -693,3 +693,21 @@ button {
   opacity: 0.35;
   pointer-events: none;
 }
+
+
+.btn-settings {
+  color: var(--text-muted);
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border-radius: 12px;
+}
+
+.btn-settings:active {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.icon-gear {
+  display: block;
+}

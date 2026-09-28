@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=15" />
+  <link rel="stylesheet" href="./styles.css?v=16" />
   <title>メモ</title>
   <!--
     任意: ここで設定を注入することもできます（firebase-config.local.js より優先）
@@ -39,7 +39,11 @@
         <h1>メモ</h1>
         <p id="sync-status" class="sync-status" data-status="ローカルのみ" aria-live="polite">ローカルのみ</p>
       </div>
-      <button type="button" id="btn-settings" class="btn btn-ghost btn-sm">設定</button>
+      <button type="button" id="btn-settings" class="btn btn-icon btn-settings" aria-label="設定" title="設定">
+        <svg class="icon-gear" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+          <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.07 7.07 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 14.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L3.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L3.83 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.05.24.25.42.49.42h3.8c.24 0 .44-.18.49-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.24.1.51 0 .64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
+        </svg>
+      </button>
     </header>
     <div class="project-bar" role="navigation" aria-label="プロジェクト">
       <div id="project-chips" class="project-chips" role="tablist"></div>
@@ -198,6 +202,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="./app.js?v=15"></script>
+  <script type="module" src="./app.js?v=16"></script>
 </body>
 </html>
