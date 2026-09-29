@@ -12,6 +12,15 @@ const STORE_PROJECTS = 'projects';
 /** フィルタ: 'all' | 'inbox' | <projectId> */
 /** @type {string} */
 let selectedFilter = 'all';
+/** 日付フィルタ (ローカル YYYY-MM-DD) — セッションのみ。null で解除 */
+/** @type {string|null} */
+let selectedDateKey = null;
+/** カレンダー表示中の年月 */
+/** @type {{ year: number, month: number }} */
+let calendarView = (() => {
+  const n = new Date();
+  return { year: n.getFullYear(), month: n.getMonth() };
+})();
 /** @type {IDBDatabase|null} */
 let db = null;
 /** @type {string|null} */
@@ -50,6 +59,11 @@ const settingsSyncStatusEl = $('#settings-sync-status');
 const settingsAuthUserEl = $('#settings-auth-user');
 const btnSettingsSignIn = $('#btn-settings-sign-in');
 const btnSettingsSignOut = $('#btn-settings-sign-out');
+const calendarModal = $('#calendar-modal');
+const calendarGrid = $('#calendar-grid');
+const calendarMonthLabel = $('#calendar-month-label');
+const dateFilterBar = $('#date-filter-bar');
+const dateFilterLabel = $('#date-filter-label');
 
 // —— IndexedDB ——
 function openDb() {
@@ -338,6 +352,37 @@ function formatUpdatedAt(ts) {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${hm}`;
 }
 
+function toDateKey(tsOrDate) {
+  const d = tsOrDate instanceof Date ? tsOrDate : new Date(tsOrDate);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function parseDateKey(key) {
+  if (!key || typeof key !== 'string') return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const day = Number(m[3]);
+  const d = new Date(y, mo, day);
+  if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day) return null;
+  return d;
+}
+
+function formatDateKeyJa(key) {
+  const d = parseDateKey(key);
+  if (!d) return '';
+  const week = ['日', '月', '火', '水', '木', '金', '土'];
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${week[d.getDay()]}）`;
+}
+
+function noteOnDateKey(note, key) {
+  if (!key || !note || !note.updatedAt) return false;
+  return toDateKey(note.updatedAt) === key;
+}
+
 function previewText(content) {
   const t = (content || '').replace(/\s+/g, ' ').trim();
   return t || '（本文なし）';
@@ -448,11 +493,16 @@ function showEditor(isNew) {
 }
 
 function filterNotes(notes) {
-  if (selectedFilter === 'all') return notes;
+  let result = notes;
   if (selectedFilter === 'inbox') {
-    return notes.filter((n) => noteProjectId(n) == null);
+    result = result.filter((n) => noteProjectId(n) == null);
+  } else if (selectedFilter !== 'all') {
+    result = result.filter((n) => noteProjectId(n) === selectedFilter);
   }
-  return notes.filter((n) => noteProjectId(n) === selectedFilter);
+  if (selectedDateKey) {
+    result = result.filter((n) => noteOnDateKey(n, selectedDateKey));
+  }
+  return result;
 }
 
 
@@ -506,7 +556,149 @@ async function fillProjectSelect(selectedId) {
   projectSelect.value = current || '';
 }
 
+function updateDateFilterBar() {
+  if (!dateFilterBar || !dateFilterLabel) return;
+  if (!selectedDateKey) {
+    dateFilterBar.hidden = true;
+    dateFilterLabel.textContent = '';
+    return;
+  }
+  dateFilterBar.hidden = false;
+  dateFilterLabel.textContent = `${formatDateKeyJa(selectedDateKey)}のメモ`;
+}
+
+function openCalendarModal() {
+  const modal = calendarModal || document.getElementById('calendar-modal');
+  if (!modal) {
+    showToast('カレンダーを開けませんでした');
+    return;
+  }
+  if (selectedDateKey) {
+    const d = parseDateKey(selectedDateKey);
+    if (d) {
+      calendarView = { year: d.getFullYear(), month: d.getMonth() };
+    }
+  } else {
+    const n = new Date();
+    calendarView = { year: n.getFullYear(), month: n.getMonth() };
+  }
+  renderCalendar().catch(console.error);
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => {
+    const focusEl = modal.querySelector('#btn-cal-today, #btn-close-calendar');
+    if (focusEl) focusEl.focus();
+  });
+}
+
+function closeCalendarModal() {
+  const modal = calendarModal || document.getElementById('calendar-modal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.style.display = '';
+}
+
+async function renderCalendar() {
+  if (!calendarGrid || !calendarMonthLabel) return;
+  const { year, month } = calendarView;
+  calendarMonthLabel.textContent = `${year}年${month + 1}月`;
+
+  const allNotes = await getAllNotes();
+  const noteDays = new Set();
+  for (const note of allNotes) {
+    if (note && note.updatedAt) noteDays.add(toDateKey(note.updatedAt));
+  }
+
+  const todayKey = toDateKey(new Date());
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Leading blanks from previous month (shown muted, non-interactive)
+  const cells = [];
+  for (let i = 0; i < startDow; i++) {
+    cells.push({ outside: true, label: '' });
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = toDateKey(new Date(year, month, day));
+    const dow = (startDow + day - 1) % 7;
+    cells.push({
+      outside: false,
+      day,
+      key,
+      dow,
+      isToday: key === todayKey,
+      isSelected: key === selectedDateKey,
+      hasNotes: noteDays.has(key)
+    });
+  }
+  // Pad to full weeks
+  while (cells.length % 7 !== 0) {
+    cells.push({ outside: true, label: '' });
+  }
+
+  calendarGrid.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const cell of cells) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cal-day';
+    if (cell.outside) {
+      btn.classList.add('is-outside');
+      btn.disabled = true;
+      btn.setAttribute('aria-hidden', 'true');
+      btn.textContent = '';
+    } else {
+      btn.textContent = String(cell.day);
+      btn.dataset.date = cell.key;
+      btn.setAttribute('aria-label', formatDateKeyJa(cell.key));
+      if (cell.dow === 0) btn.classList.add('is-sun');
+      if (cell.dow === 6) btn.classList.add('is-sat');
+      if (cell.isToday) btn.classList.add('is-today');
+      if (cell.isSelected) {
+        btn.classList.add('is-selected');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.setAttribute('aria-pressed', 'false');
+      }
+      if (cell.hasNotes) btn.classList.add('has-notes');
+    }
+    frag.appendChild(btn);
+  }
+  calendarGrid.appendChild(frag);
+}
+
+function selectDateKey(key) {
+  selectedDateKey = key || null;
+  updateDateFilterBar();
+  closeCalendarModal();
+  return renderList();
+}
+
+function clearDateFilter() {
+  selectedDateKey = null;
+  updateDateFilterBar();
+  return renderList();
+}
+
+function shiftCalendarMonth(delta) {
+  let { year, month } = calendarView;
+  month += delta;
+  if (month < 0) {
+    month = 11;
+    year -= 1;
+  } else if (month > 11) {
+    month = 0;
+    year += 1;
+  }
+  calendarView = { year, month };
+  return renderCalendar();
+}
+
 async function renderList() {
+  updateDateFilterBar();
   const [allNotes, projects] = await Promise.all([getAllNotes(), getActiveProjects()]);
   await renderProjectChips();
 
@@ -822,6 +1014,45 @@ function bindEvents() {
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
+    if (t.closest('#btn-calendar')) {
+      e.preventDefault();
+      openCalendarModal();
+      return;
+    }
+    if (t.closest('#btn-close-calendar')) {
+      e.preventDefault();
+      closeCalendarModal();
+      return;
+    }
+    if (t.closest('#btn-cal-prev')) {
+      e.preventDefault();
+      shiftCalendarMonth(-1).catch(console.error);
+      return;
+    }
+    if (t.closest('#btn-cal-next')) {
+      e.preventDefault();
+      shiftCalendarMonth(1).catch(console.error);
+      return;
+    }
+    if (t.closest('#btn-cal-today')) {
+      e.preventDefault();
+      const today = new Date();
+      calendarView = { year: today.getFullYear(), month: today.getMonth() };
+      selectDateKey(toDateKey(today)).catch(console.error);
+      return;
+    }
+    const dayBtn = t.closest('#calendar-grid .cal-day[data-date]');
+    if (dayBtn) {
+      e.preventDefault();
+      const key = dayBtn.getAttribute('data-date');
+      selectDateKey(key).catch(console.error);
+      return;
+    }
+    if (t.closest('#btn-clear-date-filter')) {
+      e.preventDefault();
+      clearDateFilter().catch(console.error);
+      return;
+    }
     if (t.closest('#btn-settings')) {
       e.preventDefault();
       openSettingsModal();
@@ -830,6 +1061,11 @@ function bindEvents() {
     if (t.closest('#btn-close-settings')) {
       e.preventDefault();
       closeSettingsModal();
+      return;
+    }
+    const calModal = calendarModal || document.getElementById('calendar-modal');
+    if (calModal && t === calModal) {
+      closeCalendarModal();
       return;
     }
     const modal = settingsModal || document.getElementById('settings-modal');
@@ -948,6 +1184,10 @@ function bindEvents() {
     }
     if (deleteModal.classList.contains('is-open')) {
       closeDeleteModal();
+      return;
+    }
+    if (calendarModal && calendarModal.classList.contains('is-open')) {
+      closeCalendarModal();
       return;
     }
     if (settingsModal.classList.contains('is-open')) {

@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=17" />
+  <link rel="stylesheet" href="./styles.css?v=18" />
   <title>メモ</title>
   <!--
     任意: ここで設定を注入することもできます（firebase-config.local.js より優先）
@@ -39,17 +39,28 @@
         <h1>メモ</h1>
         <p id="sync-status" class="sync-status" data-status="ローカルのみ" aria-live="polite">ローカルのみ</p>
       </div>
-      <button type="button" id="btn-settings" class="btn btn-icon btn-settings" aria-label="設定" title="設定">
-        <svg class="icon-gear" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-          <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.07 7.07 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 14.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L3.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L3.83 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.05.24.25.42.49.42h3.8c.24 0 .44-.18.49-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.24.1.51 0 .64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
-        </svg>
-      </button>
+      <div class="header-list-actions">
+        <button type="button" id="btn-calendar" class="btn btn-icon btn-settings" aria-label="カレンダー" title="カレンダー">
+          <svg class="icon-calendar" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zM7 12h5v5H7z"/>
+          </svg>
+        </button>
+        <button type="button" id="btn-settings" class="btn btn-icon btn-settings" aria-label="設定" title="設定">
+          <svg class="icon-gear" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.07 7.07 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 14.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L3.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L3.83 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.05.24.25.42.49.42h3.8c.24 0 .44-.18.49-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.24.1.51 0 .64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
+          </svg>
+        </button>
+      </div>
     </header>
     <div class="project-bar" role="navigation" aria-label="プロジェクト">
       <div id="project-chips" class="project-chips" role="tablist"></div>
       <button type="button" id="btn-projects-manage" class="btn btn-ghost btn-sm project-manage-btn" aria-label="プロジェクト管理">
         管理
       </button>
+    </div>
+    <div id="date-filter-bar" class="date-filter-bar" hidden>
+      <span id="date-filter-label" class="date-filter-label"></span>
+      <button type="button" id="btn-clear-date-filter" class="btn btn-ghost btn-sm" aria-label="日付フィルタを解除">すべて表示</button>
     </div>
     <main class="main">
       <ul id="note-list" class="note-list" aria-label="メモ一覧"></ul>
@@ -200,8 +211,36 @@
     </div>
   </div>
 
+
+  <!-- カレンダーモーダル -->
+  <div
+    id="calendar-modal"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="calendar-modal-title"
+    aria-hidden="true"
+  >
+    <div class="modal modal-sheet calendar-modal">
+      <h2 id="calendar-modal-title" class="sr-only">カレンダー</h2>
+      <div class="calendar-header">
+        <button type="button" id="btn-cal-prev" class="btn btn-icon btn-cal-nav" aria-label="前の月">‹</button>
+        <p id="calendar-month-label" class="calendar-month-label" aria-live="polite"></p>
+        <button type="button" id="btn-cal-next" class="btn btn-icon btn-cal-nav" aria-label="次の月">›</button>
+      </div>
+      <div class="calendar-weekdays" aria-hidden="true">
+        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+      </div>
+      <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="日付選択"></div>
+      <div class="modal-actions">
+        <button type="button" id="btn-cal-today" class="btn btn-ghost">今日</button>
+        <button type="button" id="btn-close-calendar" class="btn btn-ghost">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="./app.js?v=17"></script>
+  <script type="module" src="./app.js?v=18"></script>
 </body>
 </html>
